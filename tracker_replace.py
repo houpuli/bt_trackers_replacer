@@ -5,9 +5,10 @@ Cross-platform tracker-replacement for qBittorrent .fastresume files.
 Defaults to a BT_backup folder located alongside this script.
 
 Usage:
-  python tracker_replace.py <old_tracker> <new_tracker> [--backup-dir DIR] (--dry-run | --apply)
+  python tracker_replace.py [old_tracker] [new_tracker] [--backup-dir DIR] [--dry-run | --apply]
 
-You must specify either --dry-run (no changes) or --apply (write changes).
+If old_tracker or new_tracker are omitted, the script will prompt you.
+If neither --dry-run nor --apply is given, you will be prompted (default: dry-run).
 """
 
 import argparse
@@ -18,14 +19,16 @@ from pathlib import Path
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Replace tracker URLs in qBittorrent .fastresume files (requires --dry-run or --apply)."
+        description="Replace tracker URLs in qBittorrent .fastresume files."
     )
     parser.add_argument(
         "old_tracker",
+        nargs="?",
         help="Old tracker URL/text to find",
     )
     parser.add_argument(
         "new_tracker",
+        nargs="?",
         help="New tracker URL/text to replace with",
     )
     parser.add_argument(
@@ -34,8 +37,7 @@ def parse_args():
         default=Path(__file__).parent / "BT_backup",
         help="Directory containing .fastresume files (default: ./BT_backup next to script)",
     )
-
-    mode_group = parser.add_mutually_exclusive_group(required=True)
+    mode_group = parser.add_mutually_exclusive_group()
     mode_group.add_argument(
         "--dry-run",
         action="store_true",
@@ -46,8 +48,22 @@ def parse_args():
         action="store_true",
         help="Apply changes to files",
     )
-
     return parser.parse_args()
+
+
+def prompt_missing(args):
+    # Prompt for missing positional args
+    if not args.old_tracker:
+        args.old_tracker = input("Enter old tracker URL/text: ").strip()
+    if not args.new_tracker:
+        args.new_tracker = input("Enter new tracker URL/text: ").strip()
+    # Prompt for mode if neither flag provided
+    if not args.dry_run and not args.apply:
+        resp = input("Apply changes? [y/N]: ").strip().lower()
+        if resp in ("y", "yes"):
+            args.apply = True
+        else:
+            args.dry_run = True
 
 
 def scan_file(path: Path, old_b: bytes, new_b: bytes, section_re: re.Pattern, length_re: re.Pattern):
@@ -73,7 +89,7 @@ def scan_file(path: Path, old_b: bytes, new_b: bytes, section_re: re.Pattern, le
         _, num = lm.groups()
         length = int(num.decode('ascii'))
         pos = lm.end()
-        tracker = blob[pos: pos + length]
+        tracker = blob[pos : pos + length]
 
         if old_b in tracker:
             old = tracker.decode('utf-8', 'ignore')
@@ -100,7 +116,7 @@ def replace_file(path: Path, old_b: bytes, new_b: bytes, section_re: re.Pattern,
         _, num = lm.groups()
         length = int(num.decode('ascii'))
         pos = lm.end()
-        tracker = blob[pos: pos + length]
+        tracker = blob[pos : pos + length]
 
         if old_b in tracker:
             tracker = tracker.replace(old_b, new_b)
@@ -115,6 +131,8 @@ def replace_file(path: Path, old_b: bytes, new_b: bytes, section_re: re.Pattern,
 
 def main():
     args = parse_args()
+    prompt_missing(args)
+
     old_b = args.old_tracker.encode()
     new_b = args.new_tracker.encode()
 
