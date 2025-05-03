@@ -1,7 +1,7 @@
 # qBittorrent Tracker Replacement Script
 
 **Original Description**
-Torrent tracker replacer for qBittorrent (and possibly other BT clients)
+Torrent tracker and Passkey replacer for qBittorrent 
  
 Replaces old/outdated trackers in .fastresume files. Requires Python 3.6 or higher.
 Place it alongside a `BT_backup` folder next to this script
@@ -13,6 +13,20 @@ Usage: python tracker\_replace.py \[old\_tracker] \[new\_tracker] \[--backup-dir
 # qBittorrent Tracker Replacement Script
 
 A simple Python 3 script to replace tracker URLs in qBittorrent `.fastresume` files. It defaults to looking in a `BT_backup` folder located alongside the script, and supports both interactive prompts and non‑interactive modes (`--dry-run` or `--apply`).
+
+---
+
+## Directory Structure
+
+```text
+your_script_folder/
+├── tracker_replace.py      # The script
+└── BT_backup/             # qBittorrent backup location
+    ├── example.fastresume  # Resume files containing tracker info
+    └── ...                # other .fastresume files
+```
+
+This layout ensures the script finds your `.fastresume` files automatically. You can use this tool to replace passkeys in tracker URLs within these files.
 
 ---
 
